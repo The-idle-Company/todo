@@ -77,31 +77,46 @@
 # end
 
 
-default_platform(:ios)
+# This line ensures Fastlane skips sending anonymous usage information
+opt_out_usage
 
-platform :ios do
-  desc "Upload IPA to TestFlight"
-  lane :upload_ipa_to_testflight do
-    UI.message("Configuring App Store Connect API Key...")
-    
-    api_key = app_store_connect_api_key(
-      key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
-      issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
-      key_content: ENV['APP_STORE_CONNECT_API_KEY'],  # Assumes key content is stored in an environment variable
-      is_key_content_base64: false  # Set to true if your key content is base64 encoded
-    )
+# Define a lane for deploying to TestFlight
+desc "Upload IPA to TestFlight using API Key"
+lane :upload_ipa_to_testflight do
+  UI.message("Configuring App Store Connect API Key...")
+  
+  # Debugging output to ensure environment variables are correctly set
+  UI.message("Key ID from Environment: #{ENV['APP_STORE_CONNECT_API_KEY_ID']}")
+  UI.message("Issuer ID from Environment: #{ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID']}")
 
-    UI.message("Uploading IPA to TestFlight...")
-    
-    pilot(
-      api_key: api_key,
-      ipa: ENV['RUNNER_TEMP'] + "/ToDo.ipa",
-      app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly the identifier in your Xcode project
-    )
-
-    UI.message("Upload to TestFlight successful!")
+  # Conditionally execute if key_id and issuer_id are present
+  unless ENV['APP_STORE_CONNECT_API_KEY_ID'] && ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID']
+    UI.error("App Store Connect API key ID or issuer ID is missing!")
+    raise "Missing environment variables for App Store Connect API Key setup."
   end
+
+  # Configure the App Store Connect API Key using the environment variables
+  api_key = app_store_connect_api_key(
+    key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
+    issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+    key_content: ENV['APP_STORE_CONNECT_API_KEY'],  # This assumes the key content is directly stored in an environment variable
+    is_key_content_base64: false  # Set to true if your key content is base64 encoded
+  )
+
+  UI.message("App Store Connect API Key configured successfully.")
+
+  UI.message("Starting to upload IPA to TestFlight...")
+
+  # Upload to TestFlight using the pilot tool
+  pilot(
+    api_key: api_key,
+    ipa: ENV['RUNNER_TEMP'] + "/ToDo.ipa",  # Update path as necessary
+    app_identifier: "com.test.todo.kehinde"  # Ensure this matches your app identifier
+  )
+
+  UI.message("IPA uploaded to TestFlight successfully.")
 end
+
 
 
 

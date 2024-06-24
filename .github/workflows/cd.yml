@@ -60,3 +60,5 @@ jobs:
 
       - name: Complete job
         run: echo "Job complete"
+
+        export APP_STORE_CONNECT_API_KEY_ID=7JB438T2RU
