@@ -59,7 +59,7 @@ lane :beta do |options|
     key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
     issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
     key_content: ENV["APP_STORE_CONNECT_API_KEY"],  # Using API Key content directly
-    is_in_house: false  # Set to true only if you are part of an enterprise program
+    in_house: false  # Set to true only if you are part of an enterprise program
   )
 
   UI.message("App Store Connect API Key configured successfully using key content.")
