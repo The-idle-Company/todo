@@ -46,7 +46,7 @@ jobs:
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
-          bundle exec fastlane ios upload_ipa_to_testflight
+          bundle exec fastlane upload_ipa_to_testflight
 
       - name: Upload IPA to TestFlight using Fastlane
         env:
@@ -56,7 +56,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          bundle exec fastlane ios upload_ipa_to_testflight
+          bundle exec fastlane upload_ipa_to_testflight
 
       - name: Complete job
         run: echo "Job complete"
