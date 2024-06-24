@@ -1,49 +1,65 @@
+# default_platform(:ios)
+
+# platform :ios do
+#   desc "Create app on Apple Developer and App Store Connect"
+#   lane :create_app do
+#     produce  
+#   end
+
+# desc "Sync certificates"
+#   lane :sync_profiles do
+#     match({readonly: false,type:"appstore"})
+#   end
+
+# desc "Create ipa"
+#   lane :build do
+#     sync_profiles
+
+#     # Increases the build number by 1
+#     increment_build_number
+
+#     # Creates a signed file
+#     gym
+
+#   end
+# desc "Upload to TestFlight"
+#   lane :beta do
+#     build
+#     pilot  
+#   end
+# desc "Take screenshots"
+#   lane :screenshot do
+#     snapshot
+#   end
+# desc "Upload to App Store"
+#   lane :upload do
+#     deliver
+#   end
+
+# desc "Create app, screenshot ,build and upload"
+#   lane :release_app do
+#     create_app
+#     build
+#     screenshot	
+#     deliver
+#   end
+
+# end
 
 
-default_platform(:ios)
+desc "Upload to TestFlight using API Key"
+lane :beta do |options|
+  app_store_connect_api_key(
+    key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+    issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
+    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_ID']}.p8",
+    is_in_house: false
+  )
 
-platform :ios do
-  desc "Create app on Apple Developer and App Store Connect"
-  lane :create_app do
-    produce  
-  end
-
-desc "Sync certificates"
-  lane :sync_profiles do
-    match({readonly: false,type:"appstore"})
-  end
-
-desc "Create ipa"
-  lane :build do
-    sync_profiles
-
-    # Increases the build number by 1
-    increment_build_number
-
-    # Creates a signed file
-    gym
-
-  end
-desc "Upload to TestFlight"
-  lane :beta do
-    build
-    pilot  
-  end
-desc "Take screenshots"
-  lane :screenshot do
-    snapshot
-  end
-desc "Upload to App Store"
-  lane :upload do
-    deliver
-  end
-
-desc "Create app, screenshot ,build and upload"
-  lane :release_app do
-    create_app
-    build
-    screenshot	
-    deliver
-  end
-
+  pilot(
+    ipa: options[:ipa],
+    username: "skf134@gmail.com", # Apple ID email
+    app_specific_password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"]
+  )
 end
+

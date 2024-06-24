@@ -50,9 +50,9 @@ jobs:
 
       - name: Upload IPA to TestFlight using Fastlane
         env:
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}  # Ensure this secret is properly set in your GitHub repository secrets
         run: |
           bundle exec fastlane ios beta ipa:$RUNNER_TEMP/latest-Todo.ipa
 
