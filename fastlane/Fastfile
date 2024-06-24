@@ -1,80 +1,80 @@
-# default_platform(:ios)
+default_platform(:ios)
 
-# platform :ios do
-#   desc "Create app on Apple Developer and App Store Connect"
-#   lane :create_app do
-#     produce  
-#   end
+platform :ios do
+  desc "Create app on Apple Developer and App Store Connect"
+  lane :create_app do
+    produce  
+  end
 
-# desc "Sync certificates"
-#   lane :sync_profiles do
-#     match({readonly: false,type:"appstore"})
-#   end
+desc "Sync certificates"
+  lane :sync_profiles do
+    match({readonly: false,type:"appstore"})
+  end
 
-# desc "Create ipa"
-#   lane :build do
-#     sync_profiles
+desc "Create ipa"
+  lane :build do
+    sync_profiles
 
-#     # Increases the build number by 1
-#     increment_build_number
+    # Increases the build number by 1
+    increment_build_number
 
-#     # Creates a signed file
-#     gym
+    # Creates a signed file
+    gym
 
-#   end
-# desc "Upload to TestFlight"
-#   lane :beta do
-#     build
-#     pilot  
-#   end
-# desc "Take screenshots"
-#   lane :screenshot do
-#     snapshot
-#   end
-# desc "Upload to App Store"
-#   lane :upload do
-#     deliver
-#   end
+  end
+desc "Upload to TestFlight"
+  lane :beta do
+    build
+    pilot  
+  end
+desc "Take screenshots"
+  lane :screenshot do
+    snapshot
+  end
+desc "Upload to App Store"
+  lane :upload do
+    deliver
+  end
 
-# desc "Create app, screenshot ,build and upload"
-#   lane :release_app do
-#     create_app
-#     build
-#     screenshot	
-#     deliver
-#   end
+desc "Create app, screenshot ,build and upload"
+  lane :release_app do
+    create_app
+    build
+    screenshot	
+    deliver
+  end
 
-# end
-
-# This line ensures Fastlane skips sending anonymous usage information
-opt_out_usage
-
-# Define a lane for deploying to TestFlight
-desc "Upload to TestFlight using API Key"
-lane :beta do |options|
-  UI.message("Starting to configure the App Store Connect API Key using key content...")
-
-  # Configure the App Store Connect API Key using key content directly from environment variable
-  app_store_connect_api_key(
-    key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-    issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-    key_content: ENV["APP_STORE_CONNECT_API_KEY"],  # Using API Key content directly
-    in_house: false  # Set to true only if you are part of an enterprise program
-  )
-
-  UI.message("App Store Connect API Key configured successfully using key content.")
-
-  UI.message("Starting to upload IPA to TestFlight...")
-  
-  # Upload to TestFlight using the pilot tool
-  pilot(
-    ipa: options[:ipa], # Path to the IPA file to upload
-    username: "skf134@gmail.com", # Apple ID email
-    app_specific_password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"] # App-specific password
-  )
-
-  UI.message("IPA uploaded to TestFlight successfully.")
 end
+
+# # This line ensures Fastlane skips sending anonymous usage information
+# opt_out_usage
+
+# # Define a lane for deploying to TestFlight
+# desc "Upload to TestFlight using API Key"
+# lane :beta do |options|
+#   UI.message("Starting to configure the App Store Connect API Key using key content...")
+
+#   # Configure the App Store Connect API Key using key content directly from environment variable
+#   app_store_connect_api_key(
+#     key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+#     issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
+#     key_content: ENV["APP_STORE_CONNECT_API_KEY"],  # Using API Key content directly
+#     in_house: false  # Set to true only if you are part of an enterprise program
+#   )
+
+#   UI.message("App Store Connect API Key configured successfully using key content.")
+
+#   UI.message("Starting to upload IPA to TestFlight...")
+  
+#   # Upload to TestFlight using the pilot tool
+#   pilot(
+#     ipa: options[:ipa], # Path to the IPA file to upload
+#     username: "skf134@gmail.com", # Apple ID email
+#     app_specific_password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"] # App-specific password
+#   )
+
+#   UI.message("IPA uploaded to TestFlight successfully.")
+# end
 
 
 
