@@ -1,0 +1,3 @@
+app_identifier("com.test.todo.kehinde") # The bundle identifier of your app
+apple_id("skf134@gmail.com") # Your Apple email address
+
