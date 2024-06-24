@@ -10,7 +10,7 @@ platform :ios do
 
 desc "Sync certificates"
   lane :sync_profiles do
-    match({readonly: true,type:"appstore"})
+    match({readonly: false,type:"appstore"})
   end
 
 desc "Create ipa"
