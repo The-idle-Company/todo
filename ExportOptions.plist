@@ -9,10 +9,10 @@
     <key>provisioningProfiles</key>
     <dict>
       <key>com.test.todo.kehinde</key>
-      <string>todo profile</string>
+      <string>todo profile2</string>
     </dict>
     <key>signingStyle</key>
-    <string>automatic</string>
+    <string>manual</string>
   </dict>
 </plist>
 
