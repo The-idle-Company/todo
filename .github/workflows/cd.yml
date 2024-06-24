@@ -50,11 +50,13 @@ jobs:
 
       - name: Upload IPA to TestFlight using Fastlane
         env:
-          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          # FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          bundle exec fastlane beta ipa:$RUNNER_TEMP/latest-Todo.ipa
+          bundle exec fastlane ios upload_ipa_to_testflight
 
       - name: Complete job
         run: echo "Job complete"

@@ -78,22 +78,31 @@
 
 
 default_platform(:ios)
+
 platform :ios do
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
+    UI.message("Configuring App Store Connect API Key...")
+    
     api_key = app_store_connect_api_key(
       key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
       issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
-      key_content: ENV['APP_STORE_CONNECT_API_KEY']
+      key_content: ENV['APP_STORE_CONNECT_API_KEY'],  # Assumes key content is stored in an environment variable
+      is_key_content_base64: false  # Set to true if your key content is base64 encoded
     )
 
-     pilot(
-       api_key: api_key,
-       ipa: ENV['RUNNER_TEMP'] + "/ToDo.ipa",
-       app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
-     )
-   end
- end
+    UI.message("Uploading IPA to TestFlight...")
+    
+    pilot(
+      api_key: api_key,
+      ipa: ENV['RUNNER_TEMP'] + "/ToDo.ipa",
+      app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly the identifier in your Xcode project
+    )
+
+    UI.message("Upload to TestFlight successful!")
+  end
+end
+
 
 
 
