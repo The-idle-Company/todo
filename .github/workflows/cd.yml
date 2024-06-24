@@ -46,7 +46,7 @@ jobs:
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
-          bundle exec fastlane beta
+          bundle exec fastlane ios upload_ipa_to_testflight
 
       - name: Upload IPA to TestFlight using Fastlane
         env:
