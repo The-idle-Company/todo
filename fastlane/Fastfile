@@ -49,14 +49,14 @@
 # This line ensures Fastlane skips sending anonymous usage information
 opt_out_usage
 
-# Define a general lane for deploying to TestFlight
+# Define a lane for deploying to TestFlight
 desc "Upload to TestFlight using API Key"
 lane :beta do |options|
   # Configure the App Store Connect API Key
   app_store_connect_api_key(
     key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
     issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_ID']}.p8", # Ensure this file is correctly placed in the fastlane directory
+    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_ID']}.p8", # Ensure this file is correctly placed
     is_in_house: false  # Set to true only if you are part of an enterprise program
   )
 
@@ -67,5 +67,6 @@ lane :beta do |options|
     app_specific_password: ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"] # App-specific password
   )
 end
+
 
 
