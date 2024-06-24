@@ -58,7 +58,7 @@ lane :beta do |options|
   app_store_connect_api_key(
     key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
     issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY_ID']}.p8", # Ensure this file is correctly placed
+    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY']}.p8", # Ensure this file is correctly placed
     is_in_house: false  # Set to true only if you are part of an enterprise program
   )
 
