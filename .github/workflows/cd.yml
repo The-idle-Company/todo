@@ -46,7 +46,8 @@ jobs:
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
           echo $APP_STORE_CONNECT_API_KEY > fastlane/AuthKey.p8
-          bundle exec fastlane ios upload_ipa_to_testflight ipa:$RUNNER_TEMP/latest-Todo.ipa
+          # bundle exec fastlane ios upload_ipa_to_testflight ipa:$RUNNER_TEMP/latest-Todo.ipa
+            bundle exec fastlane ios beta ipa:$RUNNER_TEMP/latest-Todo.ipa
 
       # Final step to indicate job completion
       - name: Complete job
