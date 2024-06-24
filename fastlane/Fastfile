@@ -52,17 +52,17 @@ opt_out_usage
 # Define a lane for deploying to TestFlight
 desc "Upload to TestFlight using API Key"
 lane :beta do |options|
-  UI.message("Starting to configure the App Store Connect API Key...")
+  UI.message("Starting to configure the App Store Connect API Key using key content...")
 
-  # Configure the App Store Connect API Key
+  # Configure the App Store Connect API Key using key content directly from environment variable
   app_store_connect_api_key(
     key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
     issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-    key_filepath: "./fastlane/AuthKey_#{ENV['APP_STORE_CONNECT_API_KEY']}.p8", # Ensure this file is correctly placed
+    key_content: ENV["APP_STORE_CONNECT_API_KEY"],  # Using API Key content directly
     is_in_house: false  # Set to true only if you are part of an enterprise program
   )
 
-  UI.message("App Store Connect API Key configured successfully.")
+  UI.message("App Store Connect API Key configured successfully using key content.")
 
   UI.message("Starting to upload IPA to TestFlight...")
   
