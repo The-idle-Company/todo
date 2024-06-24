@@ -79,11 +79,11 @@ jobs:
           cat $EXPORT_OPTS_PATH # Debugging step to check the content of the plist
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Todo.xcarchive" -exportOptionsPlist $EXPORT_OPTS_PATH -exportPath $RUNNER_TEMP/build
 
-      # - name: Upload the built IPA file to S3
-      #   run: |
-      #     TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-      #     aws s3 cp "$RUNNER_TEMP/build/Pizza Man.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/pizza-man-${TIMESTAMP}.ipa"
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: ${{ secrets.AWS_REGION }}
+      - name: Upload the built IPA file to S3
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          aws s3 cp "$RUNNER_TEMP/build/Pizza Man.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/pizza-man-${TIMESTAMP}.ipa"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
