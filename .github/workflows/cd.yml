@@ -42,6 +42,7 @@ jobs:
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}  # Ensure this secret is set in your GitHub repository
         run: |
           bundle exec fastlane ios beta ipa:$RUNNER_TEMP/latest-Todo.ipa
 
