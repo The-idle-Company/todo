@@ -61,7 +61,7 @@ jobs:
           KEYCHAIN_PATH: $RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          xcodebuild -project "Pizza Man.xcodeproj" -scheme "ToDo" \
+          xcodebuild -project "Todo.xcodeproj" -scheme "ToDo" \
             -archivePath "$RUNNER_TEMP/Todo.xcarchive" \
             -sdk iphoneos \
             -configuration Debug \
