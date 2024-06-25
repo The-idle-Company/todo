@@ -24,11 +24,11 @@ jobs:
           gem install bundler
           bundle install
 
-      - name: Set Up Environment Variables
-        run: |
-          echo "APP_STORE_CONNECT_API_KEY=$APP_STORE_CONNECT_API_KEY" >> $GITHUB_ENV
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-        shell: bash
+      # - name: Set Up Environment Variables
+      #   run: |
+      #     echo "APP_STORE_CONNECT_API_KEY=$APP_STORE_CONNECT_API_KEY" >> $GITHUB_ENV
+      #     APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+      #   shell: bash
         
       - name: List and Download the Latest IPA from S3
         run: |
