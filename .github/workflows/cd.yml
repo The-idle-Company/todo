@@ -11,15 +11,12 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # Initial setup for the job
       - name: Set up job
         run: echo "Setting up job..."
 
-      # Enable debug logging
       - name: Set debug logging
         run: echo "##[debug]Logging enabled"
 
-      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -29,17 +26,22 @@ jobs:
           key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-gems-
-      
+
+      # Decode and write the API Key File to a secure location
+      - name: Decode API Key File
+        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_JSON }}" | base64 --decode > ${{ runner.temp }}/api_key.json
+        shell: bash
+
       # Install Ruby and Fastlane
       - name: Install Ruby and Fastlane
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
+          bundler-cache: true  # Uses the setup-ruby action's built-in Bundler caching
 
-      - name: Install Fastlane dependencies
+      # Optionally update Fastlane to the latest version
+      - name: Update Fastlane
         run: |
-          gem install bundler -v 2.4.22
-          bundle install
           bundle update fastlane
 
       # Download the IPA file from S3
@@ -47,18 +49,24 @@ jobs:
         run: |
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
           echo "Latest IPA: $LATEST_IPA"
-          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} $RUNNER_TEMP/latest-Todo.ipa
+          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Upload IPA to TestFlight using Fastlane
+      # Run Fastlane to upload IPA to TestFlight
       - name: Upload IPA to TestFlight using Fastlane
-        run: bundle exec fastlane upload_ipa_to_testflight
+        run: |
+          fastlane upload_ipa_to_testflight
         env:
-         FASTLANE_APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}  # Ensure this name matches what you use in your Fastfile
+          FASTLANE_APP_STORE_CONNECT_API_KEY_JSON: ${{ runner.temp }}/api_key.json
+
+      # Cleanup API Key File securely
+      - name: Cleanup API Key File
+        if: always()
+        run: rm -f ${{ runner.temp }}/api_key.json
 
       # Final step to indicate job completion
       - name: Complete job
-        run: echo "Job complete"       
+        run: echo "Job complete"
