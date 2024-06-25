@@ -27,23 +27,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gems-
 
-      # Decode and write the API Key File to a secure location
       - name: Decode API Key File
         run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_JSON }}" | base64 --decode > ${{ runner.temp }}/api_key.json
         shell: bash
 
-      # Install Ruby and Fastlane
       - name: Install Ruby and Fastlane
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
 
-      # Optionally update Fastlane to the latest version
       - name: Update Fastlane
         run: |
           bundle update fastlane
 
-      # Download the IPA file from S3
       - name: List and Download the Latest IPA from S3
         run: |
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
@@ -56,29 +52,25 @@ jobs:
 
       - name: Check IPA File Presence
         run: |
-            ls -l ${{ runner.temp }}
-            if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
-              echo "IPA file is ready for upload."
-            else
-              echo "IPA file not found, aborting."
-              exit 1
-            fi
-        
+          ls -l ${{ runner.temp }}
+          if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
+            echo "IPA file is ready for upload."
+          else
+            echo "IPA file not found, aborting."
+            exit 1
+          fi
 
-      # Run Fastlane to upload IPA to TestFlight
       - name: Upload to TestFlight
         env:
-         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-         APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-         APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-       run: |
-        bundle exec fastlane upload_ipa_to_testflight
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          bundle exec fastlane upload_ipa_to_testflight
 
-      # Cleanup API Key File securely
       - name: Cleanup API Key File
         if: always()
         run: rm -f ${{ runner.temp }}/api_key.json
 
-      # Final step to indicate job completion
       - name: Complete job
         run: echo "Job complete"
