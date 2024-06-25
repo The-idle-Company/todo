@@ -1,37 +1,35 @@
-name: "Deploy iOS app"
+name: Deploy iOS app
 
 on:
-  workflow_run:
-    workflows: ["Build iOS app"]
-    types:
-      - completed
+  push:
+    branches:
+      - main  # Or any other branch you use for releases
 
 jobs:
   deploy:
     runs-on: macos-latest
 
     steps:
-      # Initial setup for the job
-      - name: Set up job
-        run: echo "Setting up job..."
-
-      # Checkout the repository
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Install Ruby and Fastlane
-      - name: Install Ruby and Fastlane
+      - name: Set up Ruby and Fastlane
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'
+          ruby-version: '3.0'  # Specify the Ruby version you are using with Fastlane
 
-      - name: Install Fastlane dependencies
+      - name: Install Bundler and Fastlane Dependencies
         run: |
-          gem install bundler -v 2.4.22
+          gem install bundler
           bundle install
 
-      # Download the IPA file from S3
-      - name: List and download the latest IPA from S3
+      - name: Set Up Environment Variables
+        run: |
+          echo "APP_STORE_CONNECT_API_KEY=$APP_STORE_CONNECT_API_KEY" >> $GITHUB_ENV
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+      - name: List and Download the Latest IPA from S3
         run: |
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
           echo "Latest IPA: $LATEST_IPA"
@@ -41,15 +39,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Upload IPA to TestFlight using Fastlane
-      - name: Upload to TestFlight
+      - name: Upload IPA to TestFlight using Fastlane
+        run: bundle exec fastlane upload_ipa_to_testflight
         env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-        run: |
-          bundle exec fastlane upload_ipa_to_testflight
+          FASTLANE_APP_STORE_CONNECT_API_KEY: $APP_STORE_CONNECT_API_KEY  # Ensure this name matches what you use in your Fastfile
 
-      # Final step to indicate job completion
-      - name: Complete job
+      - name: Complete Job
         run: echo "Job complete"
