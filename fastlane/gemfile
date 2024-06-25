@@ -1,0 +1,4 @@
+# Gemfile
+source "https://rubygems.org"
+
+gem "fastlane"  # This line ensures that Bundler fetches the latest version of Fastlane

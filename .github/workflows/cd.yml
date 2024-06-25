@@ -23,6 +23,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - uses: actions/cache@v2
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+      
       # Install Ruby and Fastlane
       - name: Install Ruby and Fastlane
         uses: ruby/setup-ruby@v1
@@ -33,6 +40,7 @@ jobs:
         run: |
           gem install bundler -v 2.4.22
           bundle install
+          bundle update fastlane
 
       # Download the IPA file from S3
       - name: List and Download the Latest IPA from S3
