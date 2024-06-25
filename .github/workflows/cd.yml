@@ -57,7 +57,7 @@ jobs:
       - name: Check IPA File Presence
         run: |
             ls -l ${{ runner.temp }}
-            if [ -f "${{ runner.temp }}/ToDo.ipa" ]; then
+            if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
               echo "IPA file is ready for upload."
             else
               echo "IPA file not found, aborting."
