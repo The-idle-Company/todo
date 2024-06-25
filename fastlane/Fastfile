@@ -3,16 +3,13 @@ default_platform(:ios)
 platform :ios do
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
-    # Load the API Key from the generated json file
-    api_key_path = File.join(ENV['RUNNER_TEMP'], "api_key.json")  # Assuming RUNNER_TEMP is the directory where the file is placed
-    api_key = app_store_connect_api_key(key_filepath: api_key_path)  # Correct parameter name is 'key_filepath'
+    # Load the API Key from the environment variable
+    ENV['FASTLANE_APP_STORE_CONNECT_API_KEY'] = ENV['APP_STORE_CONNECT_API_KEY_JSON']
 
     # Use pilot to upload the IPA to TestFlight
     pilot(
-      api_key: api_key,
       ipa: "#{ENV['RUNNER_TEMP']}/ToDo.ipa",  # Ensure the path is correctly concatenated
       app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
     )
   end
 end
-
