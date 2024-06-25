@@ -17,18 +17,23 @@
 #   end
 # end
 
+require 'json'  # Require JSON library to parse the JSON file
+
 default_platform(:ios)
 
 platform :ios do
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
-    # Load the API Key from the environment variable
-    ENV['FASTLANE_APP_STORE_CONNECT_API_KEY'] = ENV['APP_STORE_CONNECT_API_KEY_JSON']
+    # Assuming ENV['FASTLANE_APP_STORE_CONNECT_API_KEY_JSON'] contains the actual JSON string of the API key
+    api_key_path = "/Users/runner/work/_temp/api_key.json"  # Ensure this path is correct
+    api_key_contents = File.read(api_key_path)
+    api_key = JSON.parse(api_key_contents)  # Parse JSON content into a Ruby hash
 
-    # Use pilot to upload the IPA to TestFlight
     pilot(
-      ipa: "/Users/runner/work/_temp/latest-Todo.ipa",  # Updated path to match the download location
-      app_identifier: "com.test.todo.kehinde"  # Ensure this matches exactly
+      ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
+      app_identifier: "com.test.todo.kehinde",
+      api_key: api_key  # Pass the API key hash to pilot
     )
   end
 end
+
