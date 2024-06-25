@@ -54,6 +54,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
 
+      - name: Check IPA File Presence
+        run: |
+            ls -l ${{ runner.temp }}
+            if [ -f "${{ runner.temp }}/ToDo.ipa" ]; then
+              echo "IPA file is ready for upload."
+            else
+              echo "IPA file not found, aborting."
+              exit 1
+            fi
+        
+
       # Run Fastlane to upload IPA to TestFlight
       - name: Upload IPA to TestFlight using Fastlane
         run: |
