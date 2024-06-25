@@ -11,25 +11,29 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Set up environment variables
+        run: |
+          echo "APP_STORE_CONNECT_API_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" >> $GITHUB_ENV
+          echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" >> $GITHUB_ENV
+          echo "APP_STORE_CONNECT_API_KEY=${{ secrets.APP_STORE_CONNECT_API_KEY }}" >> $GITHUB_ENV
+
       - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Set up Ruby and Fastlane
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'  # Specify the Ruby version you are using with Fastlane
+          ruby-version: '3.0'  # Ensure this matches the Ruby version you are using with Fastlane
 
       - name: Install Bundler and Fastlane Dependencies
         run: |
           gem install bundler
           bundle install
 
-      # - name: Set Up Environment Variables
-      #   run: |
-      #     echo "APP_STORE_CONNECT_API_KEY=$APP_STORE_CONNECT_API_KEY" >> $GITHUB_ENV
-      #     APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-      #   shell: bash
-        
+      - name: Update Fastlane
+        run: |
+          bundle update fastlane
+
       - name: List and Download the Latest IPA from S3
         run: |
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
@@ -43,7 +47,8 @@ jobs:
       - name: Upload IPA to TestFlight using Fastlane
         run: bundle exec fastlane upload_ipa_to_testflight
         env:
-          FASTLANE_APP_STORE_CONNECT_API_KEY: $APP_STORE_CONNECT_API_KEY  # Ensure this name matches what you use in your Fastfile
+          FASTLANE_APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}  # Ensure this name matches what you use in your Fastfile
 
       - name: Complete Job
         run: echo "Job complete"
+
