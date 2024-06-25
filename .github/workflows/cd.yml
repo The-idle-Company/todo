@@ -70,6 +70,8 @@ jobs:
         run: |
           fastlane upload_ipa_to_testflight
         env:
+          FASTLANE_USER: skf134@gmail.com
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
           FASTLANE_APP_STORE_CONNECT_API_KEY_JSON: ${{ runner.temp }}/api_key.json
 
       # Cleanup API Key File securely
