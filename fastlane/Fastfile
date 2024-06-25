@@ -1,3 +1,22 @@
+# default_platform(:ios)
+
+# platform :ios do
+#   desc "Upload IPA to TestFlight"
+#   lane :upload_ipa_to_testflight do
+#     # Load the API Key from the environment variable
+#     ENV['FASTLANE_APP_STORE_CONNECT_API_KEY'] = ENV['APP_STORE_CONNECT_API_KEY_JSON']
+
+#     # Construct the full path to the IPA file
+#     ipa_path = File.join(ENV['RUNNER_TEMP'], "ToDo.ipa")
+
+#     # Use pilot to upload the IPA to TestFlight
+#     pilot(
+#       ipa: ipa_path,
+#       app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
+#     )
+#   end
+# end
+
 default_platform(:ios)
 
 platform :ios do
@@ -6,14 +25,10 @@ platform :ios do
     # Load the API Key from the environment variable
     ENV['FASTLANE_APP_STORE_CONNECT_API_KEY'] = ENV['APP_STORE_CONNECT_API_KEY_JSON']
 
-    # Construct the full path to the IPA file
-    ipa_path = File.join(ENV['RUNNER_TEMP'], "ToDo.ipa")
-
     # Use pilot to upload the IPA to TestFlight
     pilot(
-      ipa: ipa_path,
-      app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
+      ipa: "/Users/runner/work/_temp/latest-Todo.ipa",  # Updated path to match the download location
+      app_identifier: "com.test.todo.kehinde"  # Ensure this matches exactly
     )
   end
 end
-
