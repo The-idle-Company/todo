@@ -1,9 +1,10 @@
 name: Deploy iOS app
 
 on:
-  push:
-    branches:
-      - main  # Or any other branch you use for releases
+  workflow_run:
+    workflows: ["Build iOS app"]
+    types:
+      - completed
 
 jobs:
   deploy:
