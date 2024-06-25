@@ -27,9 +27,9 @@ jobs:
       - name: Set Up Environment Variables
         run: |
           echo "APP_STORE_CONNECT_API_KEY=$APP_STORE_CONNECT_API_KEY" >> $GITHUB_ENV
-        env:
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-
+        shell: bash
+        
       - name: List and Download the Latest IPA from S3
         run: |
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
