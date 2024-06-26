@@ -3,17 +3,6 @@ require 'json'  # Require JSON library to parse the JSON file
 default_platform(:ios)
 
 platform :ios do
-  desc "Create a new app on App Store Connect"
-  lane :create_new_app do
-    produce(
-      username: ENV['FASTLANE_USER'],  # Using environment variable for Apple ID email
-      app_identifier: "com.test.todo.kehinde",  # Specific app identifier
-      app_name: "Todo App",  # Specific app name
-      team_name: ENV['FASTLANE_TEAM_NAME'],  # Optional: Team name from environment variable
-      skip_devcenter: true  # Skip creating identifiers etc. in Apple Developer Portal
-    )
-  end
-
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
     # Assuming ENV['FASTLANE_APP_STORE_CONNECT_API_KEY_JSON'] contains the actual JSON string of the API key
