@@ -1,57 +1,61 @@
+# Name of the GitHub Action workflow
 name: "Deploy iOS app"
 
+# Event that triggers this workflow
 on:
   workflow_run:
-    workflows: ["Build iOS app"]
+    workflows: ["Build iOS app"] # Trigger this workflow when the "Build iOS app" workflow completes
     types:
       - completed
 
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: macos-latest # Specify the OS to use; macOS is required for iOS app deployment
 
     steps:
       - name: Set up job
-        run: echo "Setting up job..."
+        run: echo "Setting up job..." # Initial setup step for the deployment job
 
       - name: Set debug logging
-        run: echo "##[debug]Logging enabled"
+        run: echo "##[debug]Logging enabled" # Enable debug logging for more detailed output during the job
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3 # Check out the repository's code
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v2 # Cache dependencies to speed up the job execution
         with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          path: vendor/bundle # Path to cache
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }} # Generate a cache key based on the OS and Gemfile.lock
           restore-keys: |
-            ${{ runner.os }}-gems-
+            ${{ runner.os }}-gems- # Restore the cache if an exact match is not found
 
       - name: Decode API Key File
-        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_JSON }}" | base64 --decode > ${{ runner.temp }}/api_key.json
-        shell: bash
+        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_JSON }}" | base64 --decode > ${{ runner.temp }}/api_key.json # Decode the App Store Connect API key from base64
+        shell: bash # Use bash shell to run the command
 
       - name: Install Ruby and Fastlane
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@v1 # Set up Ruby environment
         with:
-          ruby-version: '3.0'
+          ruby-version: '3.0' # Specify Ruby version
 
       - name: Update Fastlane
         run: |
-          bundle update fastlane
+          bundle update fastlane # Update Fastlane to the latest version
 
       - name: List and Download the Latest IPA from S3
         run: |
+          # Fetch the latest IPA file from the S3 bucket and download it
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
           echo "Latest IPA: $LATEST_IPA"
           aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS access key for S3 operations
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS secret key for S3 operations
+          AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region where the S3 bucket is located
 
       - name: Check IPA File Presence
         run: |
+          # Verify that the IPA file was downloaded successfully
           ls -l ${{ runner.temp }}
           if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
             echo "IPA file is ready for upload."
@@ -62,15 +66,16 @@ jobs:
 
       - name: Upload to TestFlight
         env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} # App Store Connect API Key ID
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }} # App Store Connect API Key Issuer ID
+          APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json # Path to the decoded API key JSON file
         run: |
+          # Use Fastlane to upload the IPA file to TestFlight
           bundle exec fastlane upload_ipa_to_testflight
 
       - name: Cleanup API Key File
-        if: always()
-        run: rm -f ${{ runner.temp }}/api_key.json
+        if: always() # Ensure cleanup runs even if previous steps fail
+        run: rm -f ${{ runner.temp }}/api_key.json # Remove the API key file to maintain security
 
       - name: Complete job
-        run: echo "Job complete"
+        run: echo "Job complete" # Final step to indicate the job is complete
