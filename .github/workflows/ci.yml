@@ -44,7 +44,7 @@ jobs:
         run: |
           bundle update fastlane # Update Fastlane to the latest version
 
-            - name: Build and sign iOS app using xcodebuild
+      - name: Build and sign iOS app using xcodebuild
         env:
           KEYCHAIN_PATH: $RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
@@ -77,6 +77,11 @@ jobs:
             -exportPath "$RUNNER_TEMP/build"
 
       - name: Upload the built IPA file to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           # Generate timestamp for unique filename
           TIMESTAMP=$(date +"%Y%m%d%H%M%S")
@@ -97,13 +102,13 @@ jobs:
           }
           
           echo "Successfully uploaded Todo-${TIMESTAMP}.ipa to S3"
+
+      - name: List and Download the Latest IPA from S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-
-      - name: List and Download the Latest IPA from S3
         run: |
           # First check if the bucket and prefix exist
           if ! aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/"; then
@@ -138,11 +143,6 @@ jobs:
               exit 1
             }
           fi
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Check IPA File Presence
         run: |
