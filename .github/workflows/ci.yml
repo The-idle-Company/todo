@@ -46,10 +46,41 @@ jobs:
 
       - name: List and Download the Latest IPA from S3
         run: |
-          # Fetch the latest IPA file from the S3 bucket and download it
-          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
+          # Check if there are any files in the S3 bucket
+          echo "Checking S3 bucket contents..."
+          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/" || {
+            echo "No files found in ipa/ directory or bucket access failed"
+            exit 1
+          }
+          
+          # Try to get the latest IPA file
+          LATEST_IPA=$(aws s3api list-objects-v2 \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --prefix ipa/ \
+            --query 'Contents[?contains(Key, `.ipa`)]|[?ends_with(Key, `.ipa`)]|sort_by(@, &LastModified)[-1].Key' \
+            --output text)
+          
+          if [ "$LATEST_IPA" = "None" ] || [ -z "$LATEST_IPA" ]; then
+            echo "No IPA files found in the bucket"
+            exit 1
+          fi
+          
           echo "Latest IPA: $LATEST_IPA"
-          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
+          
+          # Download the IPA file
+          aws s3 cp "s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA}" "${{ runner.temp }}/latest-Todo.ipa" || {
+            echo "Failed to download IPA file"
+            exit 1
+          }
+          
+          # Verify the download
+          if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
+            echo "IPA file downloaded successfully"
+            ls -l "${{ runner.temp }}/latest-Todo.ipa"
+          else
+            echo "IPA file not found after download"
+            exit 1
+          fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS access key for S3 operations
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS secret key for S3 operations
