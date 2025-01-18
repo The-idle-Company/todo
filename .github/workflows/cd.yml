@@ -78,7 +78,10 @@ jobs:
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} # App Store Connect API Key ID
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }} # App Store Connect API Key Issuer ID
-          APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json # Path to the decoded API key JSON file
+          # APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json # Path to the decoded API key JSON file
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          # APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          # APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
         run: |
           echo "##[debug]Uploading IPA to TestFlight"
           bundle exec fastlane upload_ipa_to_testflight
