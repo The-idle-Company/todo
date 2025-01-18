@@ -29,8 +29,8 @@ platform :ios do
       build_number: current_build_number + 1
     )
 
-    # Ensure the Info.plist has the updated build number
-    sh("agvtool next-version -all") # Using `agvtool` to increment the build number for all targets
+    # Manually update CFBundleVersion in Info.plist
+    sh("plutil -replace CFBundleVersion -string '#{current_build_number + 1}' /path/to/Info.plist")
 
     # Upload the IPA to TestFlight
     pilot(
