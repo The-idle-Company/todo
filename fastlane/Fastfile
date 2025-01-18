@@ -1,3 +1,5 @@
+# Fastfile
+
 require 'json'  # Require JSON library to parse the JSON file
 
 default_platform(:ios)
@@ -10,6 +12,12 @@ platform :ios do
     api_key_contents = File.read(api_key_path)
     api_key = JSON.parse(api_key_contents)  # Parse JSON content into a Ruby hash
 
+    # Increment the build number before uploading
+    increment_build_number(
+      build_number: (latest_testflight_build_number(app_identifier: "com.test.todo.kehinde") + 1)
+    )
+
+    # Upload the IPA to TestFlight
     pilot(
       ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
       app_identifier: "com.test.todo.kehinde",
@@ -17,4 +25,3 @@ platform :ios do
     )
   end
 end
-
