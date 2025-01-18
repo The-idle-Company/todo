@@ -1,39 +1,36 @@
-require 'json'  # Require JSON library to parse the JSON file
+require 'json'
 
 default_platform(:ios)
 
 platform :ios do
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
-    # Assuming ENV['FASTLANE_APP_STORE_CONNECT_API_KEY_JSON'] contains the actual JSON string of the API key
-    api_key_path = "/Users/runner/work/_temp/api_key.json"  # Ensure this path is correct
-
     # Read and parse the JSON content into a Ruby hash
+    api_key_path = "/Users/runner/work/_temp/api_key.json"
     api_key_contents = File.read(api_key_path)
-    api_key = JSON.parse(api_key_contents)  # Parse JSON content into a Ruby hash
+    api_key = JSON.parse(api_key_contents)
 
-    # Log the contents to ensure it is correctly parsed
-    puts "API Key Contents: #{api_key}"
-
-    # Ensure the API key is in the correct format (Hash)
-    if api_key.is_a?(Hash)
-      puts "API key parsed successfully as a Hash!"
-    else
-      raise "The API key is not in the correct format! Expected a Hash, got #{api_key.class}"
-    end
+    # Create the correct API key format
+    app_store_connect_api_key = {
+      key_id: api_key["key_id"],
+      issuer_id: api_key["issuer_id"],
+      key: api_key["key"],
+      is_key_content_base64: false
+    }
 
     # Increment the build number before uploading
     increment_build_number(
-      build_number: (latest_testflight_build_number(app_identifier: "com.test.todo.kehinde") + 1)
+      build_number: (latest_testflight_build_number(
+        app_identifier: "com.test.todo.kehinde",
+        api_key: app_store_connect_api_key
+      ) + 1)
     )
 
     # Upload the IPA to TestFlight
     pilot(
       ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
       app_identifier: "com.test.todo.kehinde",
-      api_key: api_key  # Pass the API key hash to pilot
+      api_key: app_store_connect_api_key
     )
   end
 end
-
-
