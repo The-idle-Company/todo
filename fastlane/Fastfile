@@ -12,11 +12,14 @@ platform :ios do
     api_key_contents = File.read(api_key_path)
     api_key = JSON.parse(api_key_contents)  # Parse JSON content into a Ruby hash
 
+    # Log the contents to ensure it is correctly parsed
+    puts "API Key Contents: #{api_key}"
+
     # Ensure the API key is in the correct format (Hash)
     if api_key.is_a?(Hash)
-      puts "API key parsed successfully!"
+      puts "API key parsed successfully as a Hash!"
     else
-      raise "The API key is not in the correct format!"
+      raise "The API key is not in the correct format! Expected a Hash, got #{api_key.class}"
     end
 
     # Increment the build number before uploading
@@ -32,4 +35,5 @@ platform :ios do
     )
   end
 end
+
 
