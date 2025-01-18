@@ -100,33 +100,39 @@ jobs:
           echo "S3 Bucket name: ${{ secrets.AWS_S3_BUCKET }}"
           echo "AWS Region being used: $AWS_REGION"
           
+          # Create AWS credentials file explicitly
+          mkdir -p ~/.aws
+          echo "[default]
+          aws_access_key_id = $AWS_ACCESS_KEY_ID
+          aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
+          region = $AWS_REGION" > ~/.aws/credentials
+          
+          # Set permissions
+          chmod 600 ~/.aws/credentials
+          
           # Show AWS CLI version and config
           echo "AWS CLI Version:"
           aws --version
           
-          # Configure AWS CLI
-          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-          aws configure set default.region $AWS_REGION
+          # Verify credentials file
+          echo "AWS Credentials file contents (redacted):"
+          sed 's/.*= \(.*\)/= ***/' ~/.aws/credentials
           
-          # Verify AWS configuration
-          echo "Verifying AWS configuration:"
-          aws configure list
-          
-          # Test AWS credentials
+          # Test AWS credentials with specific endpoint
           echo "Testing AWS credentials..."
-          aws sts get-caller-identity || {
+          aws sts get-caller-identity --endpoint-url https://sts.$AWS_REGION.amazonaws.com || {
             echo "ERROR: AWS credentials are invalid. Please verify:"
             echo "1. Access Key ID and Secret are correct"
             echo "2. IAM user exists and is active"
             echo "3. Credentials have not been rotated/deleted"
             echo "4. IAM user has correct permissions"
+            echo "5. Region is correct: $AWS_REGION"
             exit 1
           }
           
-          # Test S3 bucket access
+          # Test S3 bucket access with specific endpoint
           echo "Testing S3 bucket access..."
-          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" || {
+          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" --endpoint-url https://s3.$AWS_REGION.amazonaws.com || {
             echo "ERROR: Cannot access S3 bucket. Please verify:"
             echo "1. Bucket exists in region $AWS_REGION"
             echo "2. IAM user has s3:ListBucket permission"
@@ -134,10 +140,11 @@ jobs:
             exit 1
           }
           
-          # Upload IPA file
+          # Upload IPA file with specific endpoint
           echo "Uploading IPA file..."
           TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-          aws s3 cp "$RUNNER_TEMP/build/Todo.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/todo-${TIMESTAMP}.ipa" || {
+          aws s3 cp "$RUNNER_TEMP/build/Todo.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/todo-${TIMESTAMP}.ipa" \
+            --endpoint-url https://s3.$AWS_REGION.amazonaws.com || {
             echo "ERROR: Failed to upload IPA. Please verify:"
             echo "1. IPA file exists at $RUNNER_TEMP/build/Todo.ipa"
             echo "2. IAM user has s3:PutObject permission"
@@ -150,3 +157,4 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_SDK_LOAD_CONFIG: 1  # Force AWS SDK to load config
