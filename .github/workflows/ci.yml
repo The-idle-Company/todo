@@ -96,9 +96,13 @@ jobs:
           echo "Access Key ID length: ${#AWS_ACCESS_KEY_ID}"
           echo "Secret Key length: ${#AWS_SECRET_ACCESS_KEY}"
           echo "First 4 chars of Access Key ID: ${AWS_ACCESS_KEY_ID:0:4}"
+          echo "S3 Bucket name: ${{ secrets.AWS_S3_BUCKET }}"
+          echo "AWS Region being used: $AWS_REGION"
+          
+          # Test S3 bucket access
+          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" || echo "Failed to list bucket"
           
           # Add debug steps (temporary)
-          echo "AWS Region: $AWS_REGION"
           echo "Attempting to get AWS account info..."
           aws sts get-caller-identity --query 'Account' --output text || echo "Failed to get account ID"
           echo "Attempting to get AWS user info..."
