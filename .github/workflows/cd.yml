@@ -44,14 +44,51 @@ jobs:
 
       - name: List and Download the Latest IPA from S3
         run: |
-          # Fetch the latest IPA file from the S3 bucket and download it
-          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
+          # Check if there are any IPA files
+          echo "Checking for IPA files..."
+          if ! aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/"; then
+            echo "Error: ipa/ directory not found in bucket"
+            exit 1
+          fi
+          
+          IPA_COUNT=$(aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/" | grep .ipa | wc -l)
+          if [ "$IPA_COUNT" -eq 0 ]; then
+            echo "No IPA files found in the bucket"
+            exit 1
+          fi
+          
+          # Get the latest IPA
+          echo "Fetching latest IPA file..."
+          LATEST_IPA=$(aws s3api list-objects-v2 \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --prefix ipa/ \
+            --query 'Contents[?ends_with(Key, `.ipa`)]|sort_by(@, &LastModified)[-1].Key' \
+            --output text)
+          
+          if [ "$LATEST_IPA" = "None" ] || [ -z "$LATEST_IPA" ]; then
+            echo "No IPA file found"
+            exit 1
+          fi
+          
           echo "Latest IPA: $LATEST_IPA"
-          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
+          aws s3 cp "s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA}" "${{ runner.temp }}/latest-Todo.ipa" || {
+            echo "Failed to download IPA file"
+            exit 1
+          }
+          
+          # Verify download
+          if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
+            echo "IPA file downloaded successfully"
+            ls -l "${{ runner.temp }}/latest-Todo.ipa"
+          else
+            echo "IPA file not found after download"
+            exit 1
+          fi
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS access key for S3 operations
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS secret key for S3 operations
-          AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region where the S3 bucket is located
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Check IPA File Presence
         run: |
