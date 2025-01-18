@@ -3,7 +3,7 @@ name: "Build iOS app"
 
 # Events that will trigger this workflow
 on:
-  push: # Trigger the workflow on a push to the 'main' branch maybe
+  push: # Trigger the workflow on a push to the 'main' branch
     branches:
       - main
   pull_request: # Trigger the workflow on a pull request to the 'main' branch
