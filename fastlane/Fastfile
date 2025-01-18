@@ -43,19 +43,21 @@
 # end
 
 default_platform(:ios)
+
 platform :ios do
   desc "Upload IPA to TestFlight"
   lane :upload_ipa_to_testflight do
+    # Path to the decoded API key file
+    api_key_path = "/path/to/api_key.json"  # Ensure this path is correct
+
     api_key = app_store_connect_api_key(
-      key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
-      issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
-      key_content: ENV['APP_STORE_CONNECT_API_KEY']
+      key_filepath: api_key_path  # Provide the path to the decoded API key
     )
 
-     pilot(
-       api_key: api_key,
-       ipa: ENV['RUNNER_TEMP'] + "/Todo.ipa",
-       app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
-     )
-   end
- end
+    pilot(
+      api_key: api_key,
+      ipa: ENV['RUNNER_TEMP'] + "/Todo.ipa",
+      app_identifier: "com.test.todo.kehinde" # Ensure this matches exactly
+    )
+  end
+end
