@@ -81,7 +81,7 @@ jobs:
           # Set up keychain for signing
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Build and archive
+          # Build and archive the iOS app with xcodebuild
           xcodebuild -project "Todo.xcodeproj" -scheme "ToDo" \
             -archivePath "$RUNNER_TEMP/Todo.xcarchive" \
             -sdk iphoneos \
