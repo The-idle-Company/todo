@@ -100,19 +100,42 @@ jobs:
           echo "S3 Bucket name: ${{ secrets.AWS_S3_BUCKET }}"
           echo "AWS Region being used: $AWS_REGION"
           
-          # Verify AWS Account ID
-          CURRENT_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text) || echo "Failed to get account ID"
-          if [ "$CURRENT_ACCOUNT" != "$AWS_ACCOUNT_ID" ]; then
-            echo "ERROR: Current AWS account ($CURRENT_ACCOUNT) does not match expected account ($AWS_ACCOUNT_ID)"
+          # Configure AWS CLI
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          aws configure set default.region $AWS_REGION
+          
+          # Test AWS credentials
+          echo "Testing AWS credentials..."
+          aws sts get-caller-identity || {
+            echo "ERROR: AWS credentials are invalid. Please verify:"
+            echo "1. Access Key ID and Secret are correct"
+            echo "2. IAM user exists and is active"
+            echo "3. Credentials have not been rotated/deleted"
+            echo "4. IAM user has correct permissions"
             exit 1
-          fi
+          }
           
           # Test S3 bucket access
-          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" || echo "Failed to list bucket"
+          echo "Testing S3 bucket access..."
+          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" || {
+            echo "ERROR: Cannot access S3 bucket. Please verify:"
+            echo "1. Bucket exists in region $AWS_REGION"
+            echo "2. IAM user has s3:ListBucket permission"
+            echo "3. Bucket name is correct"
+            exit 1
+          }
           
-          # Generate a timestamped file name and upload the IPA to S3
+          # Upload IPA file
+          echo "Uploading IPA file..."
           TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-          aws s3 cp "$RUNNER_TEMP/build/Todo.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/todo-${TIMESTAMP}.ipa"
+          aws s3 cp "$RUNNER_TEMP/build/Todo.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/todo-${TIMESTAMP}.ipa" || {
+            echo "ERROR: Failed to upload IPA. Please verify:"
+            echo "1. IPA file exists at $RUNNER_TEMP/build/Todo.ipa"
+            echo "2. IAM user has s3:PutObject permission"
+            echo "3. S3 bucket is writable"
+            exit 1
+          }
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
