@@ -42,6 +42,25 @@
 #   end
 # end
 
+# default_platform(:ios)
+
+# platform :ios do
+#   desc "Upload IPA to TestFlight"
+#   lane :upload_ipa_to_testflight do
+#     api_key = app_store_connect_api_key(
+#       key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
+#       issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
+#       key_filepath: ENV['APP_STORE_CONNECT_API_KEY_PATH']  # Path to .p8 file
+#     )
+
+#     pilot(
+#       api_key: api_key,
+#       ipa: ENV['RUNNER_TEMP'] + "/Todo.ipa",
+#       app_identifier: "com.test.todo.kehinde"  # Ensure this matches exactly
+#     )
+#   end
+# end
+
 default_platform(:ios)
 
 platform :ios do
@@ -50,13 +69,22 @@ platform :ios do
     api_key = app_store_connect_api_key(
       key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
       issuer_id: ENV['APP_STORE_CONNECT_API_KEY_ISSUER_ID'],
-      key_filepath: ENV['APP_STORE_CONNECT_API_KEY_PATH']  # Path to .p8 file
+      key_filepath: ENV['APP_STORE_CONNECT_API_KEY']  # Path to the API key file
     )
 
+    # Increment the build number before uploading
+    increment_build_number(
+      build_number: (latest_testflight_build_number(
+        app_identifier: "com.test.todo.kehinde",
+        api_key: api_key
+      ) + 1)
+    )
+
+    # Upload the IPA to TestFlight
     pilot(
-      api_key: api_key,
-      ipa: ENV['RUNNER_TEMP'] + "/Todo.ipa",
-      app_identifier: "com.test.todo.kehinde"  # Ensure this matches exactly
+      ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
+      app_identifier: "com.test.todo.kehinde",
+      api_key: api_key
     )
   end
 end
