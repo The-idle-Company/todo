@@ -1,160 +1,81 @@
 # Name of the GitHub Action workflow
-name: "Build iOS app"
+name: "Deploy iOS app"
 
-# Events that will trigger this workflow
+# Event that triggers this workflow
 on:
-  push: # Trigger the workflow on a push to the 'main' branch
-    branches:
-      - main
-  pull_request: # Trigger the workflow on a pull request to the 'main' branch
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Build iOS app"] # Trigger this workflow when the "Build iOS app" workflow completes
+    types:
+      - completed
 
 jobs:
-  build_with_signing:
-    runs-on: macos-latest # Specify the OS to use; macOS is required for iOS builds
+  deploy:
+    runs-on: macos-latest # Specify the OS to use; macOS is required for iOS app deployment
 
     steps:
+      - name: Set up job
+        run: echo "Setting up job..." # Initial setup step for the deployment job
+
+      - name: Set debug logging
+        run: echo "##[debug]Logging enabled" # Enable debug logging for more detailed output during the job
+
       - name: Checkout repository
         uses: actions/checkout@v3 # Check out the repository's code
 
-      - name: Configure Git for Authentication
+      - uses: actions/cache@v2 # Cache dependencies to speed up the job execution
+        with:
+          path: vendor/bundle # Path to cache
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }} # Generate a cache key based on the OS and Gemfile.lock
+          restore-keys: |
+            ${{ runner.os }}-gems- # Restore the cache if an exact match is not found
+
+      - name: Decode API Key File
+        run: echo "${{ secrets.APP_STORE_CONNECT_API_KEY_JSON }}" | base64 --decode > ${{ runner.temp }}/api_key.json # Decode the App Store Connect API key from base64
+        shell: bash # Use bash shell to run the command
+
+      - name: Install Ruby and Fastlane
+        uses: ruby/setup-ruby@v1 # Set up Ruby environment
+        with:
+          ruby-version: '3.0' # Specify Ruby version
+
+      - name: Update Fastlane
+        run: |
+          bundle update fastlane # Update Fastlane to the latest version
+
+      - name: List and Download the Latest IPA from S3
+        run: |
+          # Fetch the latest IPA file from the S3 bucket and download it
+          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
+          echo "Latest IPA: $LATEST_IPA"
+          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use GitHub token from secrets
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS access key for S3 operations
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS secret key for S3 operations
+          AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region where the S3 bucket is located
+
+      - name: Check IPA File Presence
         run: |
-          # Configure git to use the token for authentication, ensuring private repositories can be accessed
-          git config --global url."https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
-      - name: List repository contents
-        run: |
-          # List the contents of the repository to verify correct paths
-          echo "Listing repository contents to verify path"
-          ls -R
-
-      - name: List available schemes
-        run: |
-          # List available schemes in the Xcode project to confirm the correct one is being used
-          xcodebuild -list -project "Todo.xcodeproj"
-
-      - name: Install the Apple certificate and provisioning profile
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }} # Base64-encoded certificate
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }} # Password for the .p12 certificate file
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }} # Base64-encoded provisioning profile
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }} # Password for the keychain
-        run: |
-          # Decode and set up the certificate and provisioning profile
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-
-          # Create and configure a temporary keychain for signing the app
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          # Import the certificate into the keychain
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          # Copy the provisioning profile to the appropriate directory
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
-
-      - name: Build and sign iOS app using xcodebuild
-        env:
-          KEYCHAIN_PATH: $RUNNER_TEMP/app-signing.keychain-db # Use the temporary keychain for code signing
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }} # Keychain password for unlocking
-        run: |
-          # Build the iOS app with Xcode and sign it using the specified identity
-          xcodebuild -project "Todo.xcodeproj" -scheme "ToDo" \
-            -archivePath "$RUNNER_TEMP/Todo.xcarchive" \
-            -sdk iphoneos \
-            -configuration Debug \
-            clean archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="iPhone Distribution" \
-            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
-
-      - name: Export the archive
-        env:
-          EXPORT_OPTIONS_PLIST: ${{ secrets.EXPORT_OPTIONS_PLIST_BASE64 }} # Base64-encoded export options plist
-        run: |
-          # Decode the export options plist and use it to export the app archive
-          EXPORT_OPTS_PATH=$RUNNER_TEMP/ExportOptions.plist
-          echo $EXPORT_OPTIONS_PLIST | base64 --decode > $EXPORT_OPTS_PATH
-          cat $EXPORT_OPTS_PATH # Debugging step to check the content of the plist
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Todo.xcarchive" -exportOptionsPlist $EXPORT_OPTS_PATH -exportPath $RUNNER_TEMP/build
-
-      - name: Upload the built IPA file to S3
-        run: |
-          # Verify credentials format and AWS account
-          echo "Access Key ID length: ${#AWS_ACCESS_KEY_ID}"
-          echo "Secret Key length: ${#AWS_SECRET_ACCESS_KEY}"
-          echo "First 4 chars of Access Key ID: ${AWS_ACCESS_KEY_ID:0:4}"
-          echo "Expected AWS Account: $AWS_ACCOUNT_ID"
-          echo "S3 Bucket name: ${{ secrets.AWS_S3_BUCKET }}"
-          echo "AWS Region being used: $AWS_REGION"
-          
-          # Create AWS credentials file explicitly
-          mkdir -p ~/.aws
-          echo "[default]
-          aws_access_key_id = $AWS_ACCESS_KEY_ID
-          aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
-          region = $AWS_REGION" > ~/.aws/credentials
-          
-          # Set permissions
-          chmod 600 ~/.aws/credentials
-          
-          # Show AWS CLI version and config
-          echo "AWS CLI Version:"
-          aws --version
-          
-          # Verify credentials file
-          echo "AWS Credentials file contents (redacted):"
-          sed 's/.*= \(.*\)/= ***/' ~/.aws/credentials
-          
-          # Test AWS credentials with specific endpoint
-          echo "Testing AWS credentials..."
-          aws sts get-caller-identity --endpoint-url https://sts.$AWS_REGION.amazonaws.com || {
-            echo "ERROR: AWS credentials are invalid. Please verify:"
-            echo "1. Access Key ID and Secret are correct"
-            echo "2. IAM user exists and is active"
-            echo "3. Credentials have not been rotated/deleted"
-            echo "4. IAM user has correct permissions"
-            echo "5. Region is correct: $AWS_REGION"
+          # Verify that the IPA file was downloaded successfully
+          ls -l ${{ runner.temp }}
+          if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
+            echo "IPA file is ready for upload."
+          else
+            echo "IPA file not found, aborting."
             exit 1
-          }
-          
-          # Test S3 bucket access with specific endpoint
-          echo "Testing S3 bucket access..."
-          aws s3 ls "s3://${{ secrets.AWS_S3_BUCKET }}/" --endpoint-url https://s3.$AWS_REGION.amazonaws.com || {
-            echo "ERROR: Cannot access S3 bucket. Please verify:"
-            echo "1. Bucket exists in region $AWS_REGION"
-            echo "2. IAM user has s3:ListBucket permission"
-            echo "3. Bucket name is correct"
-            exit 1
-          }
-          
-          # Upload IPA file with specific endpoint
-          echo "Uploading IPA file..."
-          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-          aws s3 cp "$RUNNER_TEMP/build/Todo.ipa" "s3://${{ secrets.AWS_S3_BUCKET }}/ipa/todo-${TIMESTAMP}.ipa" \
-            --endpoint-url https://s3.$AWS_REGION.amazonaws.com || {
-            echo "ERROR: Failed to upload IPA. Please verify:"
-            echo "1. IPA file exists at $RUNNER_TEMP/build/Todo.ipa"
-            echo "2. IAM user has s3:PutObject permission"
-            echo "3. S3 bucket is writable"
-            exit 1
-          }
+          fi
+
+      - name: Upload to TestFlight
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_SDK_LOAD_CONFIG: 1  # Force AWS SDK to load config
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} # App Store Connect API Key ID
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }} # App Store Connect API Key Issuer ID
+          APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json # Path to the decoded API key JSON file
+        run: |
+          # Use Fastlane to upload the IPA file to TestFlight
+          bundle exec fastlane upload_ipa_to_testflight
+
+      - name: Cleanup API Key File
+        if: always() # Ensure cleanup runs even if previous steps fail
+        run: rm -f ${{ runner.temp }}/api_key.json # Remove the API key file to maintain security
+
+      - name: Complete job
+        run: echo "Job complete" # Final step to indicate the job is complete
