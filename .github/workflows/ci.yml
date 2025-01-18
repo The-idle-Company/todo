@@ -100,10 +100,18 @@ jobs:
           echo "S3 Bucket name: ${{ secrets.AWS_S3_BUCKET }}"
           echo "AWS Region being used: $AWS_REGION"
           
+          # Show AWS CLI version and config
+          echo "AWS CLI Version:"
+          aws --version
+          
           # Configure AWS CLI
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
           aws configure set default.region $AWS_REGION
+          
+          # Verify AWS configuration
+          echo "Verifying AWS configuration:"
+          aws configure list
           
           # Test AWS credentials
           echo "Testing AWS credentials..."
