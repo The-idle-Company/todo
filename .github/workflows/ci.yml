@@ -1,12 +1,14 @@
 # Name of the GitHub Action workflow
-name: "Deploy iOS app"
+name: "Build iOS app"
 
-# Event that triggers this workflow
+# Trigger the workflow on push or pull request to the 'main' branch
 on:
-  workflow_run:
-    workflows: ["Build iOS app"] # Trigger this workflow when the "Build iOS app" workflow completes
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   deploy:
