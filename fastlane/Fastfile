@@ -30,7 +30,8 @@ platform :ios do
     )
 
     # Manually update CFBundleVersion in Info.plist
-    sh("plutil -replace CFBundleVersion -string '#{current_build_number + 1}' ./ToDo/Info.plist")
+    sh("plutil -replace CFBundleVersion -string '#{current_build_number + 1}' /Users/runner/work/todo/todo/ToDo/Info.plist")
+
 
     # Upload the IPA to TestFlight
     pilot(
