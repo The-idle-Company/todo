@@ -44,6 +44,31 @@ jobs:
         run: |
           bundle update fastlane # Update Fastlane to the latest version
 
+      - name: Export the archive
+        env:
+            EXPORT_OPTIONS_PLIST: ${{ secrets.EXPORT_OPTIONS_PLIST_BASE64 }}
+        run: |
+          # Ensure the archive exists before proceeding
+          if [ -f "$RUNNER_TEMP/list-for-ios.xcarchive" ]; then
+            echo "Archive exists, proceeding with export."
+          else
+            echo "Archive does not exist, aborting."
+            exit 1
+          fi
+
+          EXPORT_OPTS_PATH=$RUNNER_TEMP/ExportOptions.plist
+          echo -n "$EXPORT_OPTIONS_PLIST" | base64 --decode -o $EXPORT_OPTS_PATH
+          xcodebuild -exportArchive -archivePath $RUNNER_TEMP/list-for-ios.xcarchive -exportOptionsPlist $EXPORT_OPTS_PATH -exportPath $RUNNER_TEMP/build
+
+      - name: Upload the built IPA file to S3
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          aws s3 cp $RUNNER_TEMP/build/list-for-ios.ipa s3://${{ secrets.AWS_S3_BUCKET }}/ipa/list-for-ios-${TIMESTAMP}.ipa
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: List and Download the Latest IPA from S3
         run: |
           # Check if there are any files in the S3 bucket
@@ -52,27 +77,27 @@ jobs:
             echo "No files found in ipa/ directory or bucket access failed"
             exit 1
           }
-          
+
           # Try to get the latest IPA file
           LATEST_IPA=$(aws s3api list-objects-v2 \
             --bucket ${{ secrets.AWS_S3_BUCKET }} \
             --prefix ipa/ \
             --query 'Contents[?contains(Key, `.ipa`)]|[?ends_with(Key, `.ipa`)]|sort_by(@, &LastModified)[-1].Key' \
             --output text)
-          
+
           if [ "$LATEST_IPA" = "None" ] || [ -z "$LATEST_IPA" ]; then
             echo "No IPA files found in the bucket"
             exit 1
           fi
-          
+
           echo "Latest IPA: $LATEST_IPA"
-          
+
           # Download the IPA file
           aws s3 cp "s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA}" "${{ runner.temp }}/latest-Todo.ipa" || {
             echo "Failed to download IPA file"
             exit 1
           }
-          
+
           # Verify the download
           if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
             echo "IPA file downloaded successfully"
@@ -82,33 +107,33 @@ jobs:
             exit 1
           fi
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS access key for S3 operations
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS secret key for S3 operations
-          AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region where the S3 bucket is located
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      - name: Check IPA File Presence
-        run: |
-          # Verify that the IPA file was downloaded successfully
-          ls -l ${{ runner.temp }}
-          if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
-            echo "IPA file is ready for upload."
-          else
-            echo "IPA file not found, aborting."
-            exit 1
-          fi
+      # - name: Check IPA File Presence
+      #   run: |
+      #     # Verify that the IPA file was downloaded successfully
+      #     ls -l ${{ runner.temp }}
+      #     if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
+      #       echo "IPA file is ready for upload."
+      #     else
+      #       echo "IPA file not found, aborting."
+      #       exit 1
+      #     fi
 
-      - name: Upload to TestFlight
-        env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} # App Store Connect API Key ID
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }} # App Store Connect API Key Issuer ID
-          APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json # Path to the decoded API key JSON file
-        run: |
-          # Use Fastlane to upload the IPA file to TestFlight
-          bundle exec fastlane upload_ipa_to_testflight
+      # - name: Upload to TestFlight
+      #   env:
+      #     APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      #     APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+      #     APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json
+      #   run: |
+      #     # Use Fastlane to upload the IPA file to TestFlight
+      #     bundle exec fastlane upload_ipa_to_testflight
 
-      - name: Cleanup API Key File
-        if: always() # Ensure cleanup runs even if previous steps fail
-        run: rm -f ${{ runner.temp }}/api_key.json # Remove the API key file to maintain security
+      # - name: Cleanup API Key File
+      #   if: always() # Ensure cleanup runs even if previous steps fail
+      #   run: rm -f ${{ runner.temp }}/api_key.json # Remove the API key file to maintain security
 
-      - name: Complete job
-        run: echo "Job complete" # Final step to indicate the job is complete
+      # - name: Complete job
+      #   run: echo "Job complete" # Final step to indicate the job is complete
