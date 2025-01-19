@@ -10,7 +10,7 @@ platform :ios do
 
     begin
       latest_build = latest_testflight_build_number(
-        app_identifier: "com.test.todo.kehinde",
+        app_identifier: "com.test.todo.kehinde", # Replace with your bundle ID
         api_key: api_key
       )
       UI.message("Latest build number: #{latest_build}")
@@ -25,7 +25,7 @@ platform :ios do
     begin
       pilot(
         ipa: ENV['RUNNER_TEMP'] + "/latest-Todo.ipa",
-        app_identifier: "com.test.todo.kehinde",
+        app_identifier: "com.test.todo.kehinde", # Replace with your bundle ID
         api_key: api_key,
         skip_waiting_for_build_processing: true
       )

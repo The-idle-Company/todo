@@ -34,14 +34,50 @@ jobs:
       - name: Update Fastlane
         run: bundle update fastlane
 
+      #
+      # 1. Decode and sanitize the API key file
+      #
       - name: Decode API Key File
         run: |
+          # Decode from the base64 string in your secret
           echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" | base64 --decode > ${{ runner.temp }}/api_key.p8
 
+          # Remove any potential Windows carriage returns
+          tr -d '\r' < ${{ runner.temp }}/api_key.p8 > ${{ runner.temp }}/api_key_clean.p8
+          mv ${{ runner.temp }}/api_key_clean.p8 ${{ runner.temp }}/api_key.p8
+
+      #
+      # 2. Validate the decoded file
+      #
+      - name: Validate API Key File
+        run: |
+          echo "File type of api_key.p8:"
+          file ${{ runner.temp }}/api_key.p8
+
+          echo "Hex dump of the first 100 bytes:"
+          head -c 100 ${{ runner.temp }}/api_key.p8 | xxd
+
+          echo "Check if it's a valid key with OpenSSL:"
+          set +e
+          openssl pkcs8 -in ${{ runner.temp }}/api_key.p8 -nocrypt -out /dev/null
+          if [ $? -eq 0 ]; then
+            echo "Valid key!"
+          else
+            echo "Invalid key or error with openssl command"
+          fi
+          set -e
+
+      #
+      # 3. Download the latest IPA from S3
+      #
       - name: List and Download the Latest IPA from S3
         run: |
           echo "##[debug]Fetching the latest IPA from S3"
-          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix "ipa/" --query "sort_by(Contents, &LastModified)[-1].Key" --output text)
+          LATEST_IPA=$(aws s3api list-objects-v2 \
+            --bucket ${{ secrets.AWS_S3_BUCKET }} \
+            --prefix "ipa/" \
+            --query "sort_by(Contents, &LastModified)[-1].Key" \
+            --output text)
           echo "Latest IPA: $LATEST_IPA"
           aws s3 cp "s3://${{ secrets.AWS_S3_BUCKET }}/$LATEST_IPA" ${{ runner.temp }}/latest-Todo.ipa
         env:
@@ -60,6 +96,9 @@ jobs:
             exit 1
           fi
 
+      #
+      # 4. Run Fastlane to upload to TestFlight
+      #
       - name: Upload to TestFlight
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
@@ -69,6 +108,9 @@ jobs:
           echo "##[debug]Uploading IPA to TestFlight"
           bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect
 
+      #
+      # 5. Cleanup
+      #
       - name: Cleanup API Key File
         if: always()
         run: |
