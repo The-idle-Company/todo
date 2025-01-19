@@ -76,7 +76,7 @@ jobs:
           cat fastlane/Fastfile
           bundle exec fastlane lanes
           echo "##[debug]Uploading IPA to TestFlight"
-          bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect
+          bundle exec fastlane release # Call the 'release' lane
 
       - name: Cleanup API Key File # Not needed anymore if using base64 directly
         if: always()
