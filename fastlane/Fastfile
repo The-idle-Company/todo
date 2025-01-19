@@ -9,21 +9,36 @@ platform :ios do
       key_content: File.read(ENV['APP_STORE_CONNECT_API_KEY'])
     )
 
-    # Get the latest build number from TestFlight
-    latest_build = latest_testflight_build_number(
-      app_identifier: "com.test.todo.kehinde",  # Replace with your app's identifier
-      api_key: api_key,
-      version: "1.0"  # Specify your app version
-    )
+    # Get the latest build number from TestFlight for the specific version
+    begin
+      latest_build = latest_testflight_build_number(
+        app_identifier: "com.test.todo.kehinde",  # Replace with your app's identifier
+        api_key: api_key,
+        version: "1.0"  # Specify your app version
+      )
+      
+      UI.message("Latest build number: #{latest_build}")
+    rescue => e
+      UI.error("Error fetching the latest build number: #{e.message}")
+      exit(1)  # Exit early if an error occurred during fetching the build number
+    end
 
-    UI.message("Latest build number: #{latest_build}")
+    # Increment the build number if needed
+    new_build_number = latest_build + 1
+    UI.message("New build number will be: #{new_build_number}")
 
     # Upload the IPA to TestFlight
-    pilot(
-      ipa: "/Users/runner/work/_temp/latest-Todo.ipa",  # Path to your IPA file
-      app_identifier: "com.test.todo.kehinde",  # Replace with your app's identifier
-      api_key: api_key,  # Pass the API key
-      skip_waiting_for_build_processing: true  # Skip waiting for build processing in TestFlight
-    )
+    begin
+      pilot(
+        ipa: "/Users/runner/work/_temp/latest-Todo.ipa",  # Path to your IPA file
+        app_identifier: "com.test.todo.kehinde",  # Replace with your app's identifier
+        api_key: api_key,  # Pass the API key
+        skip_waiting_for_build_processing: true  # Skip waiting for build processing in TestFlight
+      )
+      UI.success("IPA successfully uploaded to TestFlight")
+    rescue => e
+      UI.error("Error uploading IPA to TestFlight: #{e.message}")
+      exit(1)  # Exit early if upload fails
+    end
   end
 end
