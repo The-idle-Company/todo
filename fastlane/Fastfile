@@ -1,6 +1,4 @@
-# Fastfile
-
-require 'json'  # Require JSON library to parse the JSON file
+require 'json'
 
 default_platform(:ios)
 
@@ -26,7 +24,7 @@ platform :ios do
       api_key: api_key,
       version: get_version_number # This will get the current version number from your Info.plist
     )
-    
+
     UI.message("Latest build number from TestFlight: #{latest_build}")
     new_build_number = latest_build + 1
     UI.message("New build number will be: #{new_build_number}")
