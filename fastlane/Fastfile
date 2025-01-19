@@ -31,17 +31,32 @@ platform :ios do
     new_build_number = latest_build + 1
     UI.message("New build number will be: #{new_build_number}")
 
-    # Increment the build number
-    increment_build_number(
-      build_number: new_build_number
+    # Update Info.plist with new build number
+    set_info_plist_value(
+      path: "./ToDo/Info.plist",
+      key: "CFBundleVersion",
+      value: new_build_number.to_s
     )
+
+    # Also update the build number in the project
+    increment_build_number(
+      build_number: new_build_number,
+      xcodeproj: "./ToDo.xcodeproj"
+    )
+
+    # Verify the new build number
+    current_build = get_info_plist_value(
+      path: "./ToDo/Info.plist",
+      key: "CFBundleVersion"
+    )
+    UI.message("Current build number in Info.plist: #{current_build}")
 
     # Upload the IPA to TestFlight
     pilot(
       ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
       app_identifier: "com.test.todo.kehinde",
       api_key: api_key,
-      skip_waiting_for_build_processing: true # Add this to skip waiting for processing
+      skip_waiting_for_build_processing: true
     )
   end
 end

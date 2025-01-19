@@ -91,3 +91,10 @@ jobs:
 
       - name: Complete job
         run: echo "##[debug]Job complete" # Final step to indicate the job is complete
+
+      - name: List Project Directory
+        run: |
+          echo "##[debug]Listing project directory"
+          pwd
+          ls -la
+          ls -la ToDo/
