@@ -1,4 +1,5 @@
 name: "Deploy iOS app"
+
 on:
   workflow_run:
     workflows: ["Build iOS app"]
@@ -19,7 +20,6 @@ jobs:
           echo "##[debug]Environment Variables:"
           echo "APP_STORE_CONNECT_API_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}"
           echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}"
-        shell: bash
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -33,21 +33,18 @@ jobs:
         run: bundle install
 
       - name: Update Fastlane
-        run: |
-          bundle update fastlane # Update Fastlane to the latest version
+        run: bundle update fastlane
 
       - name: Decode API Key File
         run: |
-          echo "##[debug]Decoding API Key"
-          echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" > ${{ runner.temp }}/api_key.p8
-        shell: bash
+          echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" | base64 --decode > ${{ runner.temp }}/api_key.p8
 
       - name: List and Download the Latest IPA from S3
         run: |
           echo "##[debug]Fetching the latest IPA from S3"
-          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix ipa/ --query 'sort_by(Contents, &LastModified)[-1].Key' --output text)
+          LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix "ipa/" --query "sort_by(Contents, &LastModified)[-1].Key" --output text)
           echo "Latest IPA: $LATEST_IPA"
-          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/${LATEST_IPA} ${{ runner.temp }}/latest-Todo.ipa
+          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/$LATEST_IPA ${{ runner.temp }}/latest-Todo.ipa
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -62,7 +59,6 @@ jobs:
           else
             echo "IPA file not found, aborting."
             exit 1
-          fi
 
       - name: Upload to TestFlight
         env:
@@ -70,11 +66,6 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.p8
         run: |
-          pwd
-          ls -la
-          ls -la fastlane
-          cat fastlane/Fastfile
-          bundle exec fastlane lanes
           echo "##[debug]Uploading IPA to TestFlight"
           bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect
 
