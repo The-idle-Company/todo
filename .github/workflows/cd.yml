@@ -61,7 +61,7 @@ jobs:
           fi
 
       - name: Upload to TestFlight
-        working-directory: ./todo
+        working-directory: ./todo/fastlane/Fastfile
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
