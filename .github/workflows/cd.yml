@@ -1,5 +1,4 @@
 name: "Deploy iOS app"
-
 on:
   workflow_run:
     workflows: ["Build iOS app"]
@@ -53,12 +52,13 @@ jobs:
       - name: Check IPA File Presence
         run: |
           echo "##[debug]Verifying IPA file presence"
-          ls -l ${{ runner.temp }}/latest-Todo.ipa
+          ls -l ${{ runner.temp }}
           if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
             echo "IPA file is ready for upload."
           else
             echo "IPA file not found, aborting."
             exit 1
+          fi
 
       - name: Upload to TestFlight
         env:
