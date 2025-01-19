@@ -3,7 +3,7 @@
 default_platform(:ios)
 
 platform :ios do
-  lane :test_api_key do
+  lane :upload_to_testflight do
     api_key = {
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
       issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
