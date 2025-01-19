@@ -10,16 +10,6 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Set up job
-        run: echo "Setting up job..."
-
-      - name: Set debug logging
-        run: |
-          echo "##[debug]Logging enabled"
-          echo "##[debug]Environment Variables:"
-          echo "APP_STORE_CONNECT_API_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}"
-          echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}"
-
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -37,17 +27,16 @@ jobs:
       #
       # 1. Decode and sanitize the API key file
       #
-      - name: Decode API Key File
+      - name: Decode and Sanitize API Key File
         run: |
-          # Decode from the base64 string in your secret
+          # Decode from the base64 string in your secret into a temporary file
           echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" | base64 --decode > ${{ runner.temp }}/api_key.p8
 
-          # Remove any potential Windows carriage returns
-          tr -d '\r' < ${{ runner.temp }}/api_key.p8 > ${{ runner.temp }}/api_key_clean.p8
-          mv ${{ runner.temp }}/api_key_clean.p8 ${{ runner.temp }}/api_key.p8
+          # Remove any potential Windows carriage returns (\r)
+          sed -i '' $'s/\r$//' ${{ runner.temp }}/api_key.p8
 
       #
-      # 2. Validate the decoded file
+      # 2. Validate the decoded file (optional but helpful for debugging)
       #
       - name: Validate API Key File
         run: |
@@ -64,15 +53,15 @@ jobs:
             echo "Valid key!"
           else
             echo "Invalid key or error with openssl command"
+            exit 1
           fi
           set -e
 
       #
       # 3. Download the latest IPA from S3
       #
-      - name: List and Download the Latest IPA from S3
+      - name: Download Latest IPA from S3
         run: |
-          echo "##[debug]Fetching the latest IPA from S3"
           LATEST_IPA=$(aws s3api list-objects-v2 \
             --bucket ${{ secrets.AWS_S3_BUCKET }} \
             --prefix "ipa/" \
@@ -87,7 +76,6 @@ jobs:
 
       - name: Check IPA File Presence
         run: |
-          echo "##[debug]Verifying IPA file presence"
           ls -l ${{ runner.temp }}
           if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
             echo "IPA file is ready for upload."
@@ -105,23 +93,12 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.p8
         run: |
-          echo "##[debug]Uploading IPA to TestFlight"
+          echo "Uploading IPA to TestFlight via Fastlane"
           bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect
 
       #
       # 5. Cleanup
       #
-      - name: Cleanup API Key File
+      - name: Cleanup
         if: always()
-        run: |
-          echo "##[debug]Cleaning up API Key file"
-          rm -f ${{ runner.temp }}/api_key.p8
-
-      - name: List Project Directory (Debug)
-        run: |
-          echo "##[debug]Listing project directory"
-          pwd
-          ls -la
-          ls -la ToDo/
-          ls -la ToDo.xcodeproj/
-          ls -la ToDo.xcodeproj/project.pbxproj
+        run: rm -f ${{ runner.temp }}/api_key.p8
