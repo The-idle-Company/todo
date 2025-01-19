@@ -1,75 +1,70 @@
-# require 'json'
-
-# default_platform(:ios)
-
-# platform :ios do
-#   desc "Upload IPA to TestFlight"
-#   lane :upload_ipa_to_testflight do
-#     # Read and parse the API key JSON
-#     api_key_path = "/Users/runner/work/_temp/api_key.json"
-#     api_key_contents = File.read(api_key_path)
-#     api_key_hash = JSON.parse(api_key_contents)
-
-#     # Create the correct API key format for App Store Connect API
-#     api_key = {
-#       key_id: api_key_hash["key_id"],
-#       issuer_id: api_key_hash["issuer_id"],
-#       key: api_key_hash["key"],
-#       is_key_content_base64: false
-#     }
-
-#     # Get the latest build number and ensure we increment it
-#     latest_build = latest_testflight_build_number(
-#       app_identifier: "com.test.todo.kehinde",
-#       api_key: api_key,
-#       version: get_version_number # This will get the current version number from your Info.plist
-#     )
-    
-#     UI.message("Latest build number from TestFlight: #{latest_build}")
-#     new_build_number = latest_build + 1
-#     UI.message("New build number will be: #{new_build_number}")
-
-#     # Update Info.plist with new build number
-#     set_info_plist_value(
-#       path: "./ToDo/Info.plist",
-#       key: "CFBundleVersion",
-#       value: new_build_number.to_s
-#     )
-
-#     # Verify that the build number in Info.plist is correctly updated
-#     current_build = get_info_plist_value(
-#       path: "./ToDo/Info.plist",
-#       key: "CFBundleVersion"
-#     )
-#     UI.message("Updated build number in Info.plist: #{current_build}")
-    
-#     # Also update the build number in the project
-#     increment_build_number(
-#       build_number: new_build_number,
-#       xcodeproj: "./ToDo.xcodeproj"
-#     )
-
-#     # Verify that the build number in the Xcode project is updated
-#     current_project_build_number = get_build_number(xcodeproj: "./ToDo.xcodeproj")
-#     UI.message("Updated build number in Xcode project: #{current_project_build_number}")
-
-#     # Upload the IPA to TestFlight
-#     pilot(
-#       ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
-#       app_identifier: "com.test.todo.kehinde",
-#       api_key: api_key,
-#       skip_waiting_for_build_processing: true
-#     )
-#   end
-# end
+require 'json'
+require 'plist'
+require 'tmpdir'
 
 default_platform(:ios)
 
 platform :ios do
-  lane :test_build_number do
-    increment_build_number(xcodeproj: "./ToDo.xcodeproj")
-    build_number = get_build_number(xcodeproj: "./ToDo.xcodeproj")
-    puts "Build Number: #{build_number}" # Print to console
-    gym(scheme: "ToDo") # Replace with your scheme
+  desc "Upload IPA to TestFlight"
+  lane :upload_ipa_to_testflight do
+    # Read and parse the API key JSON
+    api_key_path = ENV["APP_STORE_CONNECT_API_KEY"] # Use env var
+    api_key_contents = File.read(api_key_path)
+    api_key_hash = JSON.parse(api_key_contents)
+
+    # Create the correct API key format for App Store Connect API
+    api_key = {
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"], # Use env var
+      issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"], # Use env var
+      key: api_key_hash["key"],
+      is_key_content_base64: false
+    }
+
+    # Get the latest build number
+    latest_build = latest_testflight_build_number(
+      app_identifier: "com.test.todo.kehinde",
+      api_key: api_key,
+      version: get_version_number
+    )
+
+    UI.message("Latest build number from TestFlight: #{latest_build}")
+
+    # Increment the build number
+    new_build_number = latest_build + 1
+    UI.message("New build number will be: #{new_build_number}")
+
+    # Use xcrun agvtool with full path
+    agvtool_path = "/usr/bin/xcrun agvtool"
+
+    # Increment the build number using agvtool directly
+    sh("#{agvtool_path} new-version -all #{new_build_number}", chdir: "./")
+
+    # Verify the build number was updated correctly
+    current_project_build_number = sh("#{agvtool_path} what-version -terse", chdir: "./").strip
+    UI.message("Updated build number in Xcode project (using agvtool directly): #{current_project_build_number}")
+
+    # Use gym to build
+    gym(
+        scheme: "YourScheme", # ***REPLACE WITH YOUR SCHEME***
+        clean: true,
+        output_directory: "build",
+        output_name: "Todo.ipa"
+    )
+
+    ipa_path = File.join("build", "Todo.ipa")
+
+    # Verify the build number in the IPA itself (CRUCIAL DEBUGGING STEP)
+    info_plist_path = File.join(Dir.tmpdir, "Info.plist")
+    sh("unzip -p #{ipa_path} Payload/*.app/Info.plist > #{info_plist_path}")
+    info_plist = Plist.parse_xml(info_plist_path)
+    puts "Build Number in IPA: #{info_plist['CFBundleVersion']}"
+
+    # Upload the IPA to TestFlight
+    pilot(
+      ipa: ipa_path,
+      app_identifier: "com.test.todo.kehinde",
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
   end
 end
