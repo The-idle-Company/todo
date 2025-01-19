@@ -1,4 +1,4 @@
-# 
+require 'base64' # Add this require
 
 default_platform(:ios)
 
@@ -7,14 +7,14 @@ platform :ios do
     api_key = {
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
       issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
-      key: File.read(ENV["APP_STORE_CONNECT_API_KEY"]),
-      is_key_content_base64: false
+      key: Base64.decode64(ENV["APP_STORE_CONNECT_API_KEY"]), # Decode the base64 string
+      is_key_content_base64: true # Important: Set this to true
     }
 
     latest_build = latest_testflight_build_number(
-      app_identifier: "com.test.todo.kehinde", # Replace with your bundle ID
+      app_identifier: "com.test.todo.kehinde",
       api_key: api_key,
-      version: "1.0" # Provide a version
+      version: "1.0.1"
     )
 
     puts "Latest Build Number: #{latest_build}"
