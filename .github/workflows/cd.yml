@@ -44,7 +44,7 @@ jobs:
           echo "##[debug]Fetching the latest IPA from S3"
           LATEST_IPA=$(aws s3api list-objects-v2 --bucket ${{ secrets.AWS_S3_BUCKET }} --prefix "ipa/" --query "sort_by(Contents, &LastModified)[-1].Key" --output text)
           echo "Latest IPA: $LATEST_IPA"
-          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/$LATEST_IPA ${{ runner.temp }}/latest-Todo.ipa
+          aws s3 cp "s3://${{ secrets.AWS_S3_BUCKET }}/$LATEST_IPA" ${{ runner.temp }}/latest-Todo.ipa
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -53,7 +53,7 @@ jobs:
       - name: Check IPA File Presence
         run: |
           echo "##[debug]Verifying IPA file presence"
-          ls -l ${{ runner.temp }}
+          ls -l ${{ runner.temp }}/latest-Todo.ipa
           if [ -f "${{ runner.temp }}/latest-Todo.ipa" ]; then
             echo "IPA file is ready for upload."
           else
