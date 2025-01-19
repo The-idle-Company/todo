@@ -61,7 +61,6 @@ jobs:
           fi
 
       - name: Upload to TestFlight
-        working-directory: ./todo/fastlane/Fastfile
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
@@ -73,6 +72,7 @@ jobs:
           bundle exec fastlane lanes # List available lanes
           echo "##[debug]Uploading IPA to TestFlight" # Only AFTER verifying the lane exists
           bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect # CORRECT LANE NAME
+          
       - name: Cleanup API Key File
         if: always()
         run: |
