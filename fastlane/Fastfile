@@ -20,19 +20,28 @@ platform :ios do
       is_key_content_base64: false
     }
 
-    # Increment the build number before uploading
+    # Get the latest build number and ensure we increment it
+    latest_build = latest_testflight_build_number(
+      app_identifier: "com.test.todo.kehinde",
+      api_key: api_key,
+      version: get_version_number # This will get the current version number from your Info.plist
+    )
+    
+    UI.message("Latest build number from TestFlight: #{latest_build}")
+    new_build_number = latest_build + 1
+    UI.message("New build number will be: #{new_build_number}")
+
+    # Increment the build number
     increment_build_number(
-      build_number: (latest_testflight_build_number(
-        app_identifier: "com.test.todo.kehinde",
-        api_key: api_key
-      ) + 1)
+      build_number: new_build_number
     )
 
     # Upload the IPA to TestFlight
     pilot(
       ipa: "/Users/runner/work/_temp/latest-Todo.ipa",
       app_identifier: "com.test.todo.kehinde",
-      api_key: api_key
+      api_key: api_key,
+      skip_waiting_for_build_processing: true # Add this to skip waiting for processing
     )
   end
 end
