@@ -447,7 +447,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "todo profile2";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
+				VERSIONING_SYSTEM = "apple-generic-hidden";
 			};
 			name = Debug;
 		};
@@ -478,7 +478,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "todo profile2";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
+				VERSIONING_SYSTEM = "apple-generic-hidden";
 			};
 			name = Release;
 		};
