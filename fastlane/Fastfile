@@ -24,7 +24,7 @@ platform :ios do
       api_key: api_key,
       version: get_version_number # This will get the current version number from your Info.plist
     )
-
+    
     UI.message("Latest build number from TestFlight: #{latest_build}")
     new_build_number = latest_build + 1
     UI.message("New build number will be: #{new_build_number}")
@@ -36,18 +36,22 @@ platform :ios do
       value: new_build_number.to_s
     )
 
+    # Verify that the build number in Info.plist is correctly updated
+    current_build = get_info_plist_value(
+      path: "./ToDo/Info.plist",
+      key: "CFBundleVersion"
+    )
+    UI.message("Updated build number in Info.plist: #{current_build}")
+    
     # Also update the build number in the project
     increment_build_number(
       build_number: new_build_number,
       xcodeproj: "./ToDo.xcodeproj"
     )
 
-    # Verify the new build number
-    current_build = get_info_plist_value(
-      path: "./ToDo/Info.plist",
-      key: "CFBundleVersion"
-    )
-    UI.message("Current build number in Info.plist: #{current_build}")
+    # Verify that the build number in the Xcode project is updated
+    current_project_build_number = get_build_number(xcodeproj: "./ToDo.xcodeproj")
+    UI.message("Updated build number in Xcode project: #{current_project_build_number}")
 
     # Upload the IPA to TestFlight
     pilot(
