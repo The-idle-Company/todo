@@ -1,4 +1,5 @@
 name: "Deploy iOS app"
+
 on:
   workflow_run:
     workflows: ["Build iOS app"]
