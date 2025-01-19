@@ -66,9 +66,12 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY: ${{ runner.temp }}/api_key.json
         run: |
-          echo "##[debug]Uploading IPA to TestFlight"
-          bundle exec fastlane upload_ipa_to_testflight
-
+          pwd # Print working directory
+          ls -la # List files
+          cat Fastfile # Show Fastfile contents
+          bundle exec fastlane lanes # List available lanes
+          echo "##[debug]Uploading IPA to TestFlight" # Only AFTER verifying the lane exists
+          bundle exec fastlane ios upload_ipa_to_testflight_app_store_connect # CORRECT LANE NAME
       - name: Cleanup API Key File
         if: always()
         run: |
