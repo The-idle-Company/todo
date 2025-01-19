@@ -32,6 +32,10 @@ jobs:
       - name: Install Bundler gems
         run: bundle install
 
+      - name: Update Fastlane
+        run: |
+          bundle update fastlane # Update Fastlane to the latest version
+
       - name: Decode API Key File
         run: |
           echo "##[debug]Decoding API Key"

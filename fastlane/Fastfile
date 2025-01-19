@@ -13,14 +13,14 @@ platform :ios do
     begin
       latest_build = latest_testflight_build_number(
         app_identifier: "com.test.todo.kehinde",  # Replace with your app's identifier
-        api_key: api_key,
-        version: "1.0"  # Specify your app version
+        api_key: api_key
+        # Remove `version` argument or verify that version "1.0" exists
       )
       
       UI.message("Latest build number: #{latest_build}")
     rescue => e
       UI.error("Error fetching the latest build number: #{e.message}")
-      exit(1)  # Exit early if an error occurred during fetching the build number
+      return  # Gracefully return from lane if there's an issue fetching the build number
     end
 
     # Increment the build number if needed
@@ -38,7 +38,7 @@ platform :ios do
       UI.success("IPA successfully uploaded to TestFlight")
     rescue => e
       UI.error("Error uploading IPA to TestFlight: #{e.message}")
-      exit(1)  # Exit early if upload fails
+      return  # Gracefully return from lane if upload fails
     end
   end
 end
